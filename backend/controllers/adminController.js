@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import InfluencerProfile from '../models/InfluencerProfile.js';
 import Campaign from '../models/Campaign.js';
+import TrackingData from '../models/TrackingData.js';
 
 // @desc    Get all users
 // @route   GET /api/admin/users
@@ -156,6 +157,66 @@ export const getInfluencerUpdates = async (req, res) => {
         res.json(updates);
     } catch (error) {
         console.error('Error fetching influencer updates:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get influencer distribution + performance for a single campaign
+// @route   GET /api/admin/campaigns/:id/influencers
+// @access  Private/Admin
+export const getCampaignInfluencers = async (req, res) => {
+    try {
+        const campaign = await Campaign.findById(req.params.id)
+            .populate('assignedInfluencers.influencer', 'name email');
+
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Fetch tracking stats for each influencer in this campaign
+        const trackingStats = await TrackingData.aggregate([
+            { $match: { campaign: campaign._id } },
+            {
+                $group: {
+                    _id: { influencer: '$influencer', actionType: '$actionType' },
+                    count: { $sum: 1 },
+                    totalValue: { $sum: '$conversionValue' }
+                }
+            }
+        ]);
+
+        const influencers = campaign.assignedInfluencers.map(entry => {
+            const infId = entry.influencer?._id?.toString() || entry.influencer?.toString();
+            const clickStat = trackingStats.find(
+                s => s._id.influencer?.toString() === infId && s._id.actionType === 'Click'
+            );
+            const convStat = trackingStats.find(
+                s => s._id.influencer?.toString() === infId && s._id.actionType === 'Conversion'
+            );
+            return {
+                _id: entry._id,
+                influencerId: infId,
+                name: entry.influencer?.name || 'Unknown',
+                email: entry.influencer?.email || '',
+                status: entry.status,
+                trackingUrl: entry.trackingUrl,
+                clicks: clickStat ? clickStat.count : 0,
+                conversions: convStat ? convStat.count : 0,
+                revenue: convStat ? parseFloat(convStat.totalValue.toFixed(2)) : 0,
+            };
+        });
+
+        res.json({
+            campaignId: campaign._id,
+            campaignTitle: campaign.title,
+            total: influencers.length,
+            accepted: influencers.filter(i => i.status === 'Accepted').length,
+            pending: influencers.filter(i => i.status === 'Pending').length,
+            rejected: influencers.filter(i => i.status === 'Rejected').length,
+            influencers
+        });
+    } catch (error) {
+        console.error('getCampaignInfluencers error:', error);
         res.status(500).json({ message: error.message });
     }
 };

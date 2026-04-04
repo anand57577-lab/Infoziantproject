@@ -23,9 +23,17 @@ const campaignSchema = mongoose.Schema(
             type: String,
             required: false,
         },
+        startDate: {
+            type: Date,
+            default: Date.now,
+        },
+        endDate: {
+            type: Date,
+            required: false,
+        },
         status: {
             type: String,
-            enum: ['Draft', 'Active', 'Completed'],
+            enum: ['Draft', 'Active', 'Completed', 'Expired'],
             default: 'Draft',
         },
         assignedInfluencers: [

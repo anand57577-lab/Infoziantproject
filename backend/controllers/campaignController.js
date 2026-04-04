@@ -1,6 +1,22 @@
 import Campaign from '../models/Campaign.js';
 import crypto from 'crypto';
 
+// Helper: auto-expire campaigns whose endDate has passed
+const autoExpireCampaigns = async (campaigns) => {
+    const now = new Date();
+    const toExpire = campaigns.filter(
+        c => c.endDate && new Date(c.endDate) < now && c.status === 'Active'
+    );
+    if (toExpire.length > 0) {
+        await Campaign.updateMany(
+            { _id: { $in: toExpire.map(c => c._id) }, status: 'Active' },
+            { $set: { status: 'Expired' } }
+        );
+        toExpire.forEach(c => { c.status = 'Expired'; });
+    }
+    return campaigns;
+};
+
 // @desc    Get all campaigns (Admin can see all, Brand can see theirs, Influencer can see assigned)
 // @route   GET /api/campaigns
 // @access  Private
@@ -13,7 +29,13 @@ export const getCampaigns = async (req, res) => {
             filter['assignedInfluencers.influencer'] = req.user._id;
         }
 
-        const campaigns = await Campaign.find(filter).populate('brand', 'name email').populate('assignedInfluencers.influencer', 'name email');
+        let campaigns = await Campaign.find(filter)
+            .populate('brand', 'name email')
+            .populate('assignedInfluencers.influencer', 'name email');
+
+        // Auto-expire any campaigns past their end date
+        campaigns = await autoExpireCampaigns(campaigns);
+
         res.json(campaigns);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -25,7 +47,12 @@ export const getCampaigns = async (req, res) => {
 // @access  Private/Brand
 export const createCampaign = async (req, res) => {
     try {
-        const { title, description, budget, productLink } = req.body;
+        const { title, description, budget, productLink, startDate, endDate } = req.body;
+
+        // Validate dates if both are provided
+        if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+            return res.status(400).json({ message: 'End date cannot be earlier than start date' });
+        }
 
         const campaign = new Campaign({
             brand: req.user._id,
@@ -33,11 +60,57 @@ export const createCampaign = async (req, res) => {
             description,
             budget,
             productLink,
+            startDate: startDate ? new Date(startDate) : new Date(),
+            endDate: endDate ? new Date(endDate) : undefined,
             status: 'Active'
         });
 
         const createdCampaign = await campaign.save();
         res.status(201).json(createdCampaign);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update an existing campaign (Brand only)
+// @route   PUT /api/campaigns/:id
+// @access  Private/Brand
+export const updateCampaign = async (req, res) => {
+    try {
+        const { title, description, budget, productLink, endDate } = req.body;
+        const campaign = await Campaign.findById(req.params.id);
+
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Ensure only the owning brand (or admin) can update
+        if (campaign.brand.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
+            return res.status(403).json({ message: 'Not authorized to modify this campaign' });
+        }
+
+        // Validate endDate if provided
+        if (endDate && new Date(endDate) < new Date(campaign.startDate)) {
+            return res.status(400).json({ message: 'End date cannot be earlier than start date' });
+        }
+
+        // Apply updates
+        if (title !== undefined) campaign.title = title;
+        if (description !== undefined) campaign.description = description;
+        if (budget !== undefined) campaign.budget = budget;
+        if (productLink !== undefined) campaign.productLink = productLink;
+        if (endDate !== undefined) campaign.endDate = endDate ? new Date(endDate) : undefined;
+
+        // Re-check expiry after editing
+        const now = new Date();
+        if (campaign.endDate && new Date(campaign.endDate) < now && campaign.status === 'Active') {
+            campaign.status = 'Expired';
+        } else if (campaign.endDate && new Date(campaign.endDate) >= now && campaign.status === 'Expired') {
+            campaign.status = 'Active';
+        }
+
+        const updatedCampaign = await campaign.save();
+        res.json(updatedCampaign);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -162,6 +235,11 @@ export const postCampaignUpdate = async (req, res) => {
         const campaign = await Campaign.findById(req.params.id);
 
         if (campaign) {
+            // Block updates on expired campaigns
+            if (campaign.status === 'Expired') {
+                return res.status(403).json({ message: 'This campaign has expired. Updates are no longer allowed.' });
+            }
+
             // Check if user is assigned to this campaign
             const isAssigned = campaign.assignedInfluencers.some(i =>
                 i.influencer.toString() === req.user._id.toString()

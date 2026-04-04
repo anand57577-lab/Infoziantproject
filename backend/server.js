@@ -14,7 +14,9 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: "*"
+}));
 app.use(express.json());
 
 // Serve static files from uploads directory
@@ -38,4 +40,4 @@ app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.listen(process.env.PORT || 5000, () => {console.log(`Server started on port ${PORT}`)});

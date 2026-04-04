@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCampaigns, createCampaign, assignInfluencer, respondToCampaign, getCampaignUpdates, postCampaignUpdate } from '../controllers/campaignController.js';
+import { getCampaigns, createCampaign, updateCampaign, assignInfluencer, respondToCampaign, getCampaignUpdates, postCampaignUpdate } from '../controllers/campaignController.js';
 import { protect, brand, admin } from '../middleware/authMiddleware.js';
 import multer from 'multer';
 
@@ -20,6 +20,9 @@ const upload = multer({ storage });
 router.route('/')
     .get(protect, getCampaigns)
     .post(protect, brand, createCampaign);
+
+router.route('/:id')
+    .put(protect, brand, updateCampaign);
 
 router.route('/:id/assign')
     .put(protect, brand, assignInfluencer);

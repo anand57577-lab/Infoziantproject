@@ -7,7 +7,8 @@ import {
     getAllCampaigns,
     deleteCampaign,
     updateCampaignStatusAdmin,
-    getInfluencerUpdates
+    getInfluencerUpdates,
+    getCampaignInfluencers
 } from '../controllers/adminController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -33,6 +34,9 @@ router.route('/campaigns')
 
 router.route('/campaigns/:id')
     .delete(deleteCampaign);
+
+router.route('/campaigns/:id/influencers')
+    .get(getCampaignInfluencers);
 
 router.route('/campaigns/:id/status')
     .put(updateCampaignStatusAdmin);

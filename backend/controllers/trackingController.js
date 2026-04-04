@@ -15,6 +15,18 @@ export const trackClick = async (req, res) => {
             return res.status(404).json({ message: 'Invalid tracking link' });
         }
 
+        // Block tracking if campaign has expired
+        if (campaign.status === 'Expired' || (campaign.endDate && new Date(campaign.endDate) < new Date())) {
+            return res.status(410).send(`
+                <!DOCTYPE html><html><head><title>Campaign Expired</title>
+                <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f8f9fa;}
+                .box{text-align:center;padding:40px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.1);}
+                h1{color:#dc3545;margin-bottom:12px;}p{color:#6c757d;}</style></head>
+                <body><div class="box"><h1>🚫 Campaign Expired</h1>
+                <p>This promotional campaign has ended and the tracking link is no longer active.</p></div></body></html>
+            `);
+        }
+
         const influencerRecord = campaign.assignedInfluencers.find(i => i.uniqueLink === uniqueLink);
 
         // Create tracking log
