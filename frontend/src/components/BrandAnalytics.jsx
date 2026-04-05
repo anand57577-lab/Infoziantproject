@@ -75,7 +75,7 @@ const BrandAnalytics = ({ user }) => {
                 headers: { Authorization: `Bearer ${user.token}` },
                 params,
             };
-            const res = await axios.get('http://localhost:5000/api/analytics/brand/detailed', config);
+            const res = await axios.get('${import.meta.env.VITE_API_URL}/api/analytics/brand/detailed', config);
             setData(res.data);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to load analytics');
