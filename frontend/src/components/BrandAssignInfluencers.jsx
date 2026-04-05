@@ -17,8 +17,8 @@ const BrandAssignInfluencers = ({ user }) => {
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
                 
                 const [campRes, infRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/campaigns', config),
-                    axios.get('http://localhost:5000/api/profiles/approved', config)
+                    axios.get('${import.meta.env.VITE_API_URL}/api/campaigns', config),
+                    axios.get('${import.meta.env.VITE_API_URL}/api/profiles/approved', config)
                 ]);
 
                 setCampaigns(campRes.data);
@@ -64,7 +64,7 @@ const BrandAssignInfluencers = ({ user }) => {
             const results = await Promise.all(
                 selectedInfluencers.map(influencerId =>
                     axios.put(
-                        `http://localhost:5000/api/campaigns/${selectedCampaign}/assign`,
+                        `${import.meta.env.VITE_API_URL}/api/campaigns/${selectedCampaign}/assign`,
                         { influencerId },
                         config
                     )
