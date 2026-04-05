@@ -45,9 +45,9 @@ const AdminDashboard = ({ user }) => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             const [profRes, usersRes, campRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/admin/profiles', config),
-                axios.get('http://localhost:5000/api/admin/users', config),
-                axios.get('http://localhost:5000/api/admin/campaigns', config)
+                axios.get('${import.meta.env.VITE_API_URL}/api/admin/profiles', config),
+                axios.get('${import.meta.env.VITE_API_URL}/api/admin/users', config),
+                axios.get('${import.meta.env.VITE_API_URL}/api/admin/campaigns', config)
             ]);
             setProfiles(profRes.data);
             setUsersList(usersRes.data);
@@ -62,7 +62,7 @@ const AdminDashboard = ({ user }) => {
     const fetchInfluencerUpdates = async (influencerId, name) => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const res = await axios.get(`http://localhost:5000/api/admin/influencers/${influencerId}/updates`, config);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/influencers/${influencerId}/updates`, config);
             setSelectedInfluencerUpdates(res.data || []);
             setSelectedInfluencerName(name);
             setInfluencerUpdatesModalOpen(true);
@@ -83,7 +83,7 @@ const AdminDashboard = ({ user }) => {
         setCampInfData(prev => ({ ...prev, [campaignId]: { loading: true, data: null } }));
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const res = await axios.get(`http://localhost:5000/api/admin/campaigns/${campaignId}/influencers`, config);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/campaigns/${campaignId}/influencers`, config);
             setCampInfData(prev => ({ ...prev, [campaignId]: { loading: false, data: res.data } }));
         } catch (err) {
             setCampInfData(prev => ({ ...prev, [campaignId]: { loading: false, data: null, error: true } }));
@@ -94,7 +94,7 @@ const AdminDashboard = ({ user }) => {
         setCampInfData(prev => ({ ...prev, [campaignId]: { loading: true, data: null } }));
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const res = await axios.get(`http://localhost:5000/api/admin/campaigns/${campaignId}/influencers`, config);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/campaigns/${campaignId}/influencers`, config);
             setCampInfData(prev => ({ ...prev, [campaignId]: { loading: false, data: res.data } }));
         } catch (err) {
             setCampInfData(prev => ({ ...prev, [campaignId]: { loading: false, data: null, error: true } }));
@@ -107,7 +107,7 @@ const AdminDashboard = ({ user }) => {
     const handleProfileStatus = async (id, status) => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.put(`http://localhost:5000/api/admin/profiles/${id}/status`, { status }, config);
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/admin/profiles/${id}/status`, { status }, config);
             fetchAdminData();
         } catch (error) { alert(error.response?.data?.message || 'Error updating profile'); }
     };
@@ -116,7 +116,7 @@ const AdminDashboard = ({ user }) => {
         if (!window.confirm('Delete this user completely?')) return;
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.delete(`http://localhost:5000/api/admin/users/${id}`, config);
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/admin/users/${id}`, config);
             fetchAdminData();
         } catch (error) { alert(error.response?.data?.message || 'Error deleting user'); }
     };
@@ -124,7 +124,7 @@ const AdminDashboard = ({ user }) => {
     const handleCampaignStatus = async (id, status) => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.put(`http://localhost:5000/api/admin/campaigns/${id}/status`, { status }, config);
+            await axios.put(`${import.meta.env.VITE_API_URL}/api/admin/campaigns/${id}/status`, { status }, config);
             fetchAdminData();
         } catch (error) { alert(error.response?.data?.message || 'Error updating campaign'); }
     };
@@ -133,7 +133,7 @@ const AdminDashboard = ({ user }) => {
         if (!window.confirm('Delete this campaign?')) return;
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.delete(`http://localhost:5000/api/admin/campaigns/${id}`, config);
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/admin/campaigns/${id}`, config);
             fetchAdminData();
         } catch (error) { alert(error.response?.data?.message || 'Error deleting campaign'); }
     };
@@ -581,7 +581,7 @@ const AdminDashboard = ({ user }) => {
                                             <span className={`px-2 py-1 text-xs rounded-full font-semibold ${u.type === 'content' ? 'bg-green-100 text-green-800' : u.type === 'query' ? 'bg-blue-100 text-blue-800' : u.type === 'negotiation' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>{u.type}</span>
                                         </div>
                                         <p className="text-gray-700 dark:text-gray-300 mb-2">{u.message}</p>
-                                        {u.fileUrl && <a href={`http://localhost:5000${u.fileUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">View Attachment</a>}
+                                        {u.fileUrl && <a href={`${import.meta.env.VITE_API_URL}${u.fileUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">View Attachment</a>}
                                     </div>
                                 ))
                             )}
