@@ -15,7 +15,8 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: "*"
+  origin: "https://infoziantproject.onrender.com",
+  credentials: true
 }));
 app.use(express.json());
 
