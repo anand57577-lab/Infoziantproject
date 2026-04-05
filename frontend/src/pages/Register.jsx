@@ -13,7 +13,7 @@ const Register = () => {
         e.preventDefault();
         try {
             // Registration is only for influencers - role is automatically set to 'Influencer'
-            const { data } = await axios.post('http://localhost:5000/api/auth/register', { 
+            const { data } = await axios.post('${import.meta.env.VITE_API_URL}/api/auth/register', { 
                 name, 
                 email, 
                 password 
